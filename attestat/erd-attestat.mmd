@@ -1,0 +1,221 @@
+%% Attestat module ERD
+%% Notes:
+%% - Many links below are logical/application-level; most migrations do not declare FK constraints.
+%% - External tables are included only where the attestat module actually depends on them in code.
+
+erDiagram
+    ATTESTAT_SETTINGS {
+        bigint id PK
+        string region_code
+        string order_number
+        date order_date
+        date issue_date
+        string grade_display
+        json grade_labels
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ATTESTAT_ORDERS {
+        bigint id PK
+        string name
+        string order_number
+        date order_date
+        date issue_date
+        smallint sort_order
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ATTESTAT_STUDENT_DOCS {
+        bigint id PK
+        bigint id_student
+        int id_year
+        bigint attestat_order_id
+        boolean is_honors
+        tinyint status
+        string blank_number
+        string blank_appendix_number
+        string order_number
+        date order_date
+        date issue_date
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ATTESTAT_SUBJECTS {
+        bigint id PK
+        int id_year
+        tinyint grade
+        string name
+        string type
+        int sort_order
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ATTESTAT_SUBJECT_LINKS {
+        bigint id PK
+        bigint attestat_subject_id
+        bigint id_subject
+        decimal weight
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ATTESTAT_SUBJECT_MARKS {
+        bigint id PK
+        bigint student_id
+        bigint attestat_subject_id
+        int id_year
+        smallint value
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ATTESTAT_MARKS {
+        bigint id PK
+        bigint student_id
+        bigint id_subject
+        int id_year
+        smallint value
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ATTESTAT_TEMPLATES {
+        bigint id PK
+        tinyint grade
+        json grades
+        bigint id_class
+        int id_year
+        string name
+        text description
+        int sort_order
+        boolean is_active
+        string image_path
+        json fields
+        date order_date
+        date issue_date
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ATTESTAT_TEMPLATE_TYPES {
+        bigint id PK
+        bigint attestat_template_id
+        string code
+        string label
+        boolean is_system
+        int sort_order
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ATTESTAT_FIELD_DEFINITIONS {
+        bigint id PK
+        bigint attestat_template_id
+        string template_type
+        string key
+        string label
+        string type
+        string source
+        string format
+        string scope_locale
+        string scope_kind
+        json params
+        boolean is_system
+        boolean is_active
+        int sort_order
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ATTESTAT_CLASS_TEMPLATE_DEFAULTS {
+        bigint id PK
+        int id_year
+        bigint id_class
+        string template_type
+        bigint attestat_template_id
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ATTESTAT_STUDENT_TEMPLATE_OVERRIDES {
+        bigint id PK
+        int id_year
+        bigint id_student
+        string template_type
+        bigint attestat_template_id
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    STUDENTS {
+        bigint id_student PK
+    }
+
+    CLASS_LISTS {
+        bigint id_class PK
+        tinyint class_grade
+    }
+
+    DIRECTORY_SUBJECTS {
+        bigint id_subject PK
+        string subject_name
+    }
+
+    STUDENT_PARALLELS {
+        bigint student_id
+        int year_id
+        tinyint student_grade
+    }
+
+    CLASS_STUDENTS {
+        bigint student_id
+        bigint class_id
+        string class_type
+    }
+
+    GROUP_LIST {
+        bigint id_group PK
+        bigint group_subject
+        int group_year
+        tinyint group_grade
+    }
+
+    MARK_FINAL {
+        bigint final_student
+        bigint final_group
+        string final_criterion
+        string final_value
+    }
+
+    STUDENTS ||--o{ ATTESTAT_STUDENT_DOCS : "id_student"
+    ATTESTAT_ORDERS ||--o{ ATTESTAT_STUDENT_DOCS : "attestat_order_id"
+
+    ATTESTAT_SUBJECTS ||--o{ ATTESTAT_SUBJECT_LINKS : "attestat_subject_id"
+    DIRECTORY_SUBJECTS ||--o{ ATTESTAT_SUBJECT_LINKS : "id_subject"
+
+    ATTESTAT_SUBJECTS ||--o{ ATTESTAT_SUBJECT_MARKS : "attestat_subject_id"
+    STUDENTS ||--o{ ATTESTAT_SUBJECT_MARKS : "student_id"
+
+    DIRECTORY_SUBJECTS ||--o{ ATTESTAT_MARKS : "id_subject"
+    STUDENTS ||--o{ ATTESTAT_MARKS : "student_id"
+
+    CLASS_LISTS ||--o{ ATTESTAT_TEMPLATES : "id_class"
+    ATTESTAT_TEMPLATES ||--o{ ATTESTAT_TEMPLATE_TYPES : "attestat_template_id"
+    ATTESTAT_TEMPLATES ||--o{ ATTESTAT_FIELD_DEFINITIONS : "attestat_template_id"
+    ATTESTAT_TEMPLATES ||--o{ ATTESTAT_CLASS_TEMPLATE_DEFAULTS : "attestat_template_id"
+    ATTESTAT_TEMPLATES ||--o{ ATTESTAT_STUDENT_TEMPLATE_OVERRIDES : "attestat_template_id"
+
+    CLASS_LISTS ||--o{ ATTESTAT_CLASS_TEMPLATE_DEFAULTS : "id_class"
+    STUDENTS ||--o{ ATTESTAT_STUDENT_TEMPLATE_OVERRIDES : "id_student"
+
+    STUDENTS ||--o{ STUDENT_PARALLELS : "id_student"
+    STUDENTS ||--o{ CLASS_STUDENTS : "id_student"
+    CLASS_LISTS ||--o{ CLASS_STUDENTS : "id_class"
+
+    DIRECTORY_SUBJECTS ||--o{ GROUP_LIST : "group_subject"
+    GROUP_LIST ||--o{ MARK_FINAL : "final_group"
+    STUDENTS ||--o{ MARK_FINAL : "final_student"
